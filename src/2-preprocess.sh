@@ -12,18 +12,17 @@ for s in $(cat experiment/subject_list.txt); do
 
 echo $s
 
-DICOMDIR=experiment/dicom/$s
-DATADIR=experiment/data/$s
-WORKINGDIR=experiment/working_preprocess/$s
+DATADIR=${TOP}/experiment/data/$s
+WORKINGDIR=${TOP}/experiment/working_preprocess/$s
 
 # prepare working directory
-mkdir -p $WORKING_DIR
+mkdir -p $WORKINGDIR
 
 # move to working dir
 cd $WORKINGDIR
 
 # drop the first 3TR
-fsl5.0-fslroi raw raw_roi 3 -1
+fsl5.0-fslroi $DATADIR/raw raw_roi 3 -1
 
 # slice timing correction
 fsl5.0-slicetimer -i raw_roi -o raw_roi_timecorr -r 2
@@ -51,6 +50,8 @@ fsl5.0-fslmaths raw_roi_timecorr_mcf_avg_csf -thr 150 raw_roi_timecorr_mcf_avg_c
 fsl5.0-fslmaths raw_roi_timecorr_mcf_avg_wm -thr 150 raw_roi_timecorr_mcf_avg_wm_thr
 
 python ${TOP}/src/regress.py
+
+mv raw_roi_timecorr_mcf_res.nii.gz $DATADIR/raw_preprocess.nii.gz
 
 cd $TOP
 
