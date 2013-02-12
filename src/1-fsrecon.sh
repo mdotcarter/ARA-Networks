@@ -7,6 +7,7 @@ CONVERT=$FREESURFER_HOME/bin/mri_convert
 TOP=$PWD
 
 WORKINGDIR=${TOP}/experiment/working_fsrecon
+DATADIR=${TOP}/experiment/data/$s
 
 # prepare working directory
 mkdir -p $WORKINGDIR
@@ -24,5 +25,8 @@ for s in $(cat experiment/subject_list.txt); do
     $CONVERT $DICOMFILE -it dicom  $SUBJECTS_DIR/$s/mri/orig/001.mgz
 
     $RECON -subject $s -all
+
+    $CONVERT $SUBJECTS_DIR/$s/mri/orig/001.mgz $DATADIR/$s/t1w.nii
+    $CONVERT $SUBJECTS_DIR/$s/mri/aparc+aseg.mgz $DATADIR/$s/fslabels.nii
 
 done
