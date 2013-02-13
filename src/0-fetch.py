@@ -1,74 +1,53 @@
-from pyxnat import Interface
-import time
-import re
-import os
-import sys
-import tempfile
-import shutil
+import re, os, sys
+import tempfile, shutil
+import csv, urllib2, zipfile
 
-# simple throttle to prevent problems with server responses
-DELAY = 1
+def get_data(metadata, storage_path):
 
-def get_data(storage_path):
+    password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
+    server = "http://xnat.bsl.ece.vt.edu"
+    password_mgr.add_password(None, server, "guest", "guest")
+    handler = urllib2.HTTPBasicAuthHandler(password_mgr)
+    opener = urllib2.build_opener(handler)
 
-    interface = Interface(server='http://xnat.bsl.ece.vt.edu',
-                          user='guest',
-                          password='guest',
-                          cachedir='/tmp')
-
-    subjects = interface.select.project('ACE').subjects()
+    uri_pattern = ("http://xnat.bsl.ece.vt.edu/REST/projects/ACE/subjects/"
+                   "%(SUBJECT)s/experiments/"
+                   "%(SUBJECT)s_MR/scans/"
+                   "%(ID)s/files?format=zip")
 
     subject_ids = []
-    for s in subjects:
-        experiments = s.experiments()
-        for e in experiments:
-            scans = e.scans()
-            for sc in scans:
-                time.sleep(DELAY)
-                if re.search("rest", sc.attrs.get('type')):
-                    time.sleep(DELAY)
-                    label = s.attrs.get('label')
-                    if label not in subject_ids: subject_ids.append(label)
-                    time.sleep(DELAY)
-                    label = e.attrs.get('label')
-                    time.sleep(DELAY)
-                    ident = sc.attrs.get('ID')
-                    time.sleep(DELAY)
-                    scan_type = sc.attrs.get('type')
-                    tempdir = tempfile.mkdtemp()
+    for row in metadata:
+        label = row[0].strip()
+        scan_type = row[1].strip()
+        ident = row[2].strip()
 
-                    path = os.path.join(tempdir, label, 'scans')
-                    path = os.path.join(path, re.sub(' ', '_', ident+'-'+scan_type))
-                    path = os.path.join(path, 'resources', 'secondary', 'files')
-                    params = [s.attrs.get('ID'),e.attrs.get('ID'),ident]
+        print "Fetching Subject ID ", label, " scan type ", scan_type
 
-                    print "Fetching Subject ID ", subject_ids[-1]
-                    scans.download(tempdir, type=sc.attrs.get('ID'), extract=True)
-                    shutil.copytree(path, os.path.join(storage_path, "rest", subject_ids[-1]))
-                    shutil.rmtree(tempdir)
+        if label not in subject_ids: subject_ids.append(label)
 
-                time.sleep(DELAY)
-                if re.search("3DSPGR", sc.attrs.get('type')):
-                    time.sleep(DELAY)
-                    label = s.attrs.get('label')
-                    if label not in subject_ids: subject_ids.append(label)
-                    time.sleep(DELAY)
-                    label = e.attrs.get('label')
-                    time.sleep(DELAY)
-                    ident = sc.attrs.get('ID')
-                    time.sleep(DELAY)
-                    scan_type = sc.attrs.get('type')
-                    tempdir = tempfile.mkdtemp()
+        uri = uri_pattern % {"SUBJECT" : label, "ID": ident}
+        print uri
+        response = opener.open(uri)
 
-                    path = os.path.join(tempdir, label, 'scans')
-                    path = os.path.join(path, re.sub(' ', '_', ident+'-'+scan_type))
-                    path = os.path.join(path, 'resources', 'secondary', 'files')
-                    params = [s.attrs.get('ID'),e.attrs.get('ID'),ident]
+        tempdir = tempfile.mkdtemp()
+        print tempdir
+        temp = os.path.join(tempdir, 'archive.zip')
+        with open(temp, 'wb') as zfile:
+            zfile.write(response.read())
 
-                    print "Fetching Subject ID ", subject_ids[-1]
-                    scans.download(tempdir, type=sc.attrs.get('ID'), extract=True)
-                    shutil.copytree(path, os.path.join(storage_path, "T1", subject_ids[-1]))
-                    shutil.rmtree(tempdir)
+        path = os.path.join(tempdir, (label+'_MR'), 'scans')
+        path = os.path.join(path, re.sub(' ', '_', ident+'-'+scan_type))
+        path = os.path.join(path, 'resources', 'secondary', 'files')
+
+        # unzip file
+        zipfile.ZipFile(temp, 'r').extractall(tempdir)
+
+        if re.search("rest", scan_type):
+            shutil.copytree(path, os.path.join(storage_path, "rest", label))
+        if re.search("3DSPGR", scan_type):
+            shutil.copytree(path, os.path.join(storage_path, "T1", label))
+
+        shutil.rmtree(tempdir)
 
 
     return subject_ids
@@ -76,6 +55,13 @@ def get_data(storage_path):
 if __name__ == "__main__":
 
     pwd = os.getcwd()
+
+    metadata = []
+    subject_meta_filename = os.path.join(pwd, 'src', 'subject_metadata.txt')
+    with open(subject_meta_filename, 'r') as meta_file:
+        for row in csv.reader(meta_file, delimiter=','):
+            metadata.append(row)
+
     storage_path =  os.path.join(pwd, 'experiment')
     subject_list_filename = os.path.join(storage_path, 'subject_list.txt')
     try:
@@ -88,7 +74,7 @@ if __name__ == "__main__":
         print "Storage Path", storage_path, "Exists, Halting."
         sys.exit(1)
 
-    ids = get_data(storage_path)
+    ids = get_data(metadata, storage_path)
 
     with open(subject_list_filename, 'w') as subject_file:
         for i in ids:
