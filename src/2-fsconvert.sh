@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-export FREESURFER_HOME=/opt/freesurfer
 source $FREESURFER_HOME/SetUpFreeSurfer.sh
 RECON=$FREESURFER_HOME/bin/recon-all
 CONVERT=$FREESURFER_HOME/bin/mri_convert
@@ -7,7 +6,7 @@ CONVERT=$FREESURFER_HOME/bin/mri_convert
 TOP=$PWD
 
 SUBJECTS_DIR=${TOP}/experiment/working_fsrecon
-DATADIR=${TOP}/experiment/data/$s
+DATADIR=${TOP}/experiment/data
 
 for s in $(cat experiment/subject_list.txt); do
 
