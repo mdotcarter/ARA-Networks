@@ -6,9 +6,9 @@ if __name__ == "__main__":
     inimg = nb.load('raw_roi_timecorr_mcf.nii.gz')
     data = inimg.get_data().astype(np.float64)
 
-    global_mask = (nb.load('global-roi-epi.nii.gz').get_data() > 0)
-    wm_mask = (nb.load('wm-roi-epi.nii.gz').get_data() > 0)
-    csf_mask = (nb.load('csf-roi-epi.nii.gz').get_data() > 0)
+    global_mask = (nb.load('global-roi.nii.gz').get_data() > 0)
+    wm_mask = (nb.load('wm-roi.nii.gz').get_data() > 0)
+    csf_mask = (nb.load('csf-roi.nii.gz').get_data() > 0)
 
     global_sig = data[global_mask].mean(0)
     wm_sig = data[wm_mask].mean(0)
