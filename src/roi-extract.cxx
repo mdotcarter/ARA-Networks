@@ -81,8 +81,6 @@ void fill_roi(LabelImageType::Pointer &input, LabelPixelType label,
       ++imageit;
     }
 
-  cout << theindex << " = " << themax << endl;
-
   // fill roi based the distance map at a percentage of the max distance
   typedef itk::ImageRegionIterator<LabelImageType> OutputIteratorType;
   OutputIteratorType outputit(output, output->GetLargestPossibleRegion() );
