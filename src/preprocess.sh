@@ -24,17 +24,11 @@ slicetimer -i raw_roi -o raw_roi_timecorr -r 2
 # motion correction
 mcflirt -in raw_roi_timecorr -mats
 
-# extract wm, csf, and global rois
-${TOP}/build/bin/roi-extract $DATADIR/fslabels.nii
-
 # compute average image
 fslmaths  raw_roi_timecorr_mcf -Tmean raw_roi_timecorr_mcf_avg
 
-# resample rois into epi space
-flirt -in $DATADIR/t1w.nii -ref raw_roi_timecorr_mcf_avg -omat t1_2_epi.mat
-flirt -in wm-roi.nii.gz -ref raw_roi_timecorr_mcf_avg -init t1_2_epi.mat -applyxfm -interp nearestneighbour -o  wm-roi-epi
-flirt -in csf-roi.nii.gz -ref raw_roi_timecorr_mcf_avg -init t1_2_epi.mat -applyxfm -interp nearestneighbour -o  csf-roi-epi
-flirt -in global-roi.nii.gz -ref raw_roi_timecorr_mcf_avg -init t1_2_epi.mat -applyxfm -interp nearestneighbour -o  global-roi-epi
+# extract wm, csf, and global rois in epi space
+${TOP}/build/bin/roi-extract $DATADIR/fslabels.nii raw_roi_timecorr_mcf_avg
 
 # perform regression
 python ${TOP}/src/regress.py

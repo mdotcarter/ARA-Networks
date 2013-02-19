@@ -15,6 +15,9 @@ using std::string;
 #include <itkDanielssonDistanceMapImageFilter.h>
 #include <itkImageRegionConstIteratorWithIndex.h>
 #include <itkImageFileWriter.h>
+#include <itkResampleImageFilter.h>
+#include <itkAffineTransform.h>
+#include <itkNearestNeighborInterpolateImageFunction.h>
 
 #include "vul_arg.h"
 
@@ -33,7 +36,7 @@ const LabelPixelType RIGHT_VENT4_LABEL = 4;
 const FloatPixelType THRESH_PERCENTAGE = 0.5;
 
 void fill_roi(LabelImageType::Pointer &input, LabelPixelType label,
-	      LabelImageType::Pointer &output)
+              LabelImageType::Pointer &output)
 {
   // extract map of left WM label
   typedef itk::ThresholdImageFilter< LabelImageType > FilterType;
@@ -50,7 +53,7 @@ void fill_roi(LabelImageType::Pointer &input, LabelPixelType label,
 
   // compute the distance transform
   typedef itk::DanielssonDistanceMapImageFilter<LabelImageType,
-						FloatImageType> DistanceFilterType;
+                                                FloatImageType> DistanceFilterType;
   DistanceFilterType::Pointer dfilter = DistanceFilterType::New();
   dfilter->SetInput( thresh2->GetOutput() );
   try
@@ -73,10 +76,10 @@ void fill_roi(LabelImageType::Pointer &input, LabelPixelType label,
   while( !imageit.IsAtEnd() )
     {
       if(imageit.Get() > themax)
-	{
-	  themax = imageit.Get();
-	  theindex = imageit.GetIndex();
-	}
+        {
+          themax = imageit.Get();
+          theindex = imageit.GetIndex();
+        }
 
       ++imageit;
     }
@@ -89,9 +92,9 @@ void fill_roi(LabelImageType::Pointer &input, LabelPixelType label,
   while( !imageit.IsAtEnd() )
     {
       if(imageit.Get() > themax*THRESH_PERCENTAGE)
-	{
-	  outputit.Set(1);
-	}
+        {
+          outputit.Set(1);
+        }
 
       ++imageit;
       ++outputit;
@@ -180,9 +183,9 @@ void extract_global_roi(LabelImageType::Pointer &input)
   while( !inputit.IsAtEnd() )
     {
       if(inputit.Get() > 0)
-	{
-	  resultit.Set(1);
-	}
+        {
+          resultit.Set(1);
+        }
 
       ++inputit;
       ++resultit;
@@ -210,6 +213,7 @@ int main(int argc, char ** argv)
 {
   // parse command line
   vul_arg<string> labelFile(0, "label image file name");
+  vul_arg<string> epiFile(0, "average epi file name");
   vul_arg_parse(argc, argv);
 
   // setup input and label file reader
@@ -217,23 +221,65 @@ int main(int argc, char ** argv)
   LabelReaderType::Pointer labelReader = LabelReaderType::New();
   labelReader->SetFileName( labelFile().c_str() );
 
+  typedef itk::ImageFileReader< FloatImageType >  EPIReaderType;
+  EPIReaderType::Pointer epiReader = EPIReaderType::New();
+  epiReader->SetFileName( epiFile().c_str() );
+
   // read input label file
   LabelImageType::Pointer input;
+  FloatImageType::Pointer epi;
   try
-	{
-	  labelReader->Update();
-	  input = labelReader->GetOutput();
-	}
-  catch( itk::ExceptionObject& err )
-	{
-	  cerr << "Reading label image failed (fatal)." << endl;
-	  cerr << err << endl;
-	  exit( EXIT_FAILURE );
-	}
+        {
+          labelReader->Update();
+          input = labelReader->GetOutput();
 
-  extract_wm_roi(input);
-  extract_csf_roi(input);
-  extract_global_roi(input);
+          epiReader->Update();
+          epi = epiReader->GetOutput();
+        }
+  catch( itk::ExceptionObject& err )
+        {
+          cerr << "Reading input images failed (fatal)." << endl;
+          cerr << err << endl;
+          exit( EXIT_FAILURE );
+        }
+
+  // resample labels onto EPI space
+  typedef itk::ResampleImageFilter<LabelImageType, LabelImageType> ResampleFilterType;
+  ResampleFilterType::Pointer resampler = ResampleFilterType::New();
+
+  typedef itk::AffineTransform< double, Dimension >  TransformType;
+  TransformType::Pointer transform = TransformType::New();
+
+  typedef itk::NearestNeighborInterpolateImageFunction<
+                       LabelImageType, double >  InterpolatorType;
+  InterpolatorType::Pointer interpolator = InterpolatorType::New();
+  resampler->SetInterpolator(interpolator);
+  resampler->SetDefaultPixelValue(0);
+  resampler->SetOutputSpacing( epi->GetSpacing() );
+  resampler->SetOutputDirection( epi->GetDirection() );
+  resampler->SetOutputOrigin( epi->GetOrigin() );
+  resampler->SetSize( epi->GetRequestedRegion().GetSize() );
+  resampler->SetInput( input );
+
+  transform->SetIdentity();
+  resampler->SetTransform( transform );
+
+  LabelImageType::Pointer resampled_input;
+  try
+    {
+      resampler->Update();
+      resampled_input = resampler->GetOutput();
+    }
+  catch( itk::ExceptionObject& err )
+    {
+      cerr << "Resampling input image failed (fatal)." << endl;
+      cerr << err << endl;
+      exit( EXIT_FAILURE );
+    }
+
+  extract_wm_roi(resampled_input);
+  extract_csf_roi(resampled_input);
+  extract_global_roi(resampled_input);
 
   return EXIT_SUCCESS;
 }
