@@ -23,7 +23,7 @@ on any practical time scale. The scripts use a generic qsub that should work
 on gridengine and similar systems with some adjustment. We highly recommend
 Rocks (rocksclusters.org) for this.
 
-## Build
+## Build and Python Environment
 
 There are a few utility programs used that must be compiled from source. A
 build script is provided to help with this process. From the top-level directory
@@ -36,14 +36,15 @@ utility programs.
 
 To setup the python virtual environment, in the build directory run
 
-	python2.7 ../src/setup-python
+	python2.7 ../src/setup-python.py
 
 This will create a python script devenv-bootstrap.py in the build directory. Running
 
 	python2.7 devenv-bootstrap.py pythonenv
 
-will create the virtual environment and populate it with the required modules.
+will create the virtual environment and populate it with the required modules. Note the name of the environment (pythonenv) is important as it is used in the processing scripts to invoke the correct python environment (using pythonenv/bin/activate).
 
+To check that the tools are built, the python environment correctly setup, and the external tools all installed you can run the script src/check.sh from the top-level directory.
 
 # Processing Steps
 
@@ -84,4 +85,4 @@ This bash script sets up the directory structure expected by freesurfer, convert
 Source: 3-preprocess.sh, roi-extract.cxx, regress.py
 
 The preprocess script drops the first 3 TR, then performs slice timing and motion correction.
-It then runs the roi-extract utility on the freesurfer segmentation to create conservative CSF, WM, and global ROI masks. These are used by regress.py to regress out those (average) signals, producing rest_preprocess.nii.gz
+It then runs the roi-extract utility on the freesurfer segmentation to create conservative CSF, WM, and global ROI masks. These are used by regress.py to regress out those (average) signals, and then perform bandpass filtering, producing rest_preprocess.nii.gz
