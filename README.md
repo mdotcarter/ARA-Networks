@@ -17,6 +17,7 @@ There are also several non-standard software dependencies.
 * FSL 5.0
 * Freesurfer 5.1.0
 * ITK-3.20.1
+* 3d Slicer 3.6.3
 
 A standard computing cluster is needed to replicate this work in its entirety
 on any practical time scale. The scripts use a generic qsub that should work
@@ -86,3 +87,9 @@ Source: 3-preprocess.sh, roi-extract.cxx, regress.py
 
 The preprocess script drops the first 3 TR, then performs slice timing and motion correction.
 It then runs the roi-extract utility on the freesurfer segmentation to create conservative CSF, WM, and global ROI masks. These are used by regress.py to regress out those (average) signals, and then perform bandpass filtering, producing rest_preprocess.nii.gz
+
+### Registration and Masking
+
+Source 4-register.sh
+
+The register script uses 3d Slicer to move the t1w image, Freesurfer labels, and the AAL atlas ROI map into the same space as the preprocessed fMRI volume.  The fMRI volume is then split into separate volumes by masking it with the AAL ROI map, with one volume created for each ROI.  These volumes are then masked with the Freesurfer label volume.  The final output is a directory name masked_fmri with the resulting 4d volumes from the two masking operations.  These volumes are individually named 'fmri_ROI_{XXXX}.nii.gz' where {XXXX} is the label number from the AAL ROI map.
