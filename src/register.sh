@@ -24,8 +24,10 @@ mv TEMP0000.nii.gz ../fmri0.nii.gz
 cd ..
 rm -r split_dir
 
-# register t1w to fmri
-RigidRegistration --fixedsmoothingfactor 0 --movingsmoothingfactor 0 --histogrambins 30 --spatialsamples 10000 --iterations 1000,1000,500,200 --learningrate 0.01,0.005,0.0005,0.0002 --translationscale 100 --outputtransform ./t1wtofmri_transform.txt --resampledmovingfilename ./t1w_regfmri.nii.gz ./fmri0.nii.gz ./t1w_ss.nii.gz
+# resample t1w and register to fmri
+ResampleVolume2 --Reference ./fmri0.nii.gz --interpolation linear --default_pixel_value 0 ./t1w_ss.nii.gz ./t1w_rs.nii.gz
+
+RigidRegistration --fixedsmoothingfactor 0 --movingsmoothingfactor 0 --histogrambins 30 --spatialsamples 10000 --iterations 1000,1000,500,200 --learningrate 0.01,0.005,0.0005,0.0002 --translationscale 100 --outputtransform ./t1wtofmri_transform.txt --resampledmovingfilename ./t1w_regfmri.nii.gz ./fmri0.nii.gz ./t1w_rs.nii.gz
 
 # register freesurfer labels to fmri
 ResampleVolume2 --Reference ./fmri0.nii.gz --transformationFile ./t1wtofmri_transform.txt --transform_order input-to-output --interpolation nn --default_pixel_value 0 ${DATADIR}/fslabels.nii ./fslabels_regfmri.nii.gz
