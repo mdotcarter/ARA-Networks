@@ -32,10 +32,13 @@ RigidRegistration --fixedsmoothingfactor 0 --movingsmoothingfactor 0 --histogram
 # register freesurfer labels to fmri
 ResampleVolume2 --Reference ./fmri0.nii.gz --transformationFile ./t1wtofmri_transform.txt --transform_order input-to-output --interpolation nn --default_pixel_value 0 ${DATADIR}/fslabels.nii ./fslabels_regfmri.nii.gz
 
-# register atlas to t1w (t1w already registered to fmri)
-RigidRegistration --fixedsmoothingfactor 0 --movingsmoothingfactor 0 --histogrambins 30 --spatialsamples 10000 --iterations 1000,1000,500,200 --learningrate 0.01,0.005,0.0005,0.0002 --translationscale 100 --outputtransform ./atlastot1w_rigidtransform.txt ./t1w_regfmri.nii.gz ${ATLASDIR}/MNI152_T1_1mm_brain.nii.gz
+# resample atlas t1w to fmri voxel size
+ResampleVolume2 --Reference ./t1w_regfmri.nii.gz --interpolation linear --default_pixel_value 0 ${ATLASDIR}/MNI152_T1_1mm_brain.nii.gz ./atlasbrain_rs.nii.gz
 
-AffineRegistration --fixedsmoothingfactor 0 --movingsmoothingfactor 0 --histogrambins 30 --spatialsamples 10000 --iterations 2000 --translationscale 100 --initialtransform ./atlastot1w_rigidtransform.txt --outputtransform ./atlastot1w_affinetransform.txt --resampledmovingfilename ./atlas_regfMRI.nii.gz ./t1w_regfmri.nii.gz ${ATLASDIR}/MNI152_T1_1mm_brain.nii.gz
+# register atlas to t1w (t1w already registered to fmri)
+RigidRegistration --fixedsmoothingfactor 0 --movingsmoothingfactor 0 --histogrambins 30 --spatialsamples 10000 --iterations 1000,1000,500,200 --learningrate 0.01,0.005,0.0005,0.0002 --translationscale 100 --outputtransform ./atlastot1w_rigidtransform.txt ./t1w_regfmri.nii.gz ./atlasbrain_rs.nii.gz
+
+AffineRegistration --fixedsmoothingfactor 0 --movingsmoothingfactor 0 --histogrambins 30 --spatialsamples 10000 --iterations 2000 --translationscale 100 --initialtransform ./atlastot1w_rigidtransform.txt --outputtransform ./atlastot1w_affinetransform.txt --resampledmovingfilename ./atlas_regfMRI.nii.gz ./t1w_regfmri.nii.gz ./atlasbrain_rs.nii.gz
 
 # apply atlas transformation to label map
 ResampleVolume2 --Reference ./fmri0.nii.gz --transformationFile ./atlastot1w_affinetransform.txt --transform_order input-to-output --interpolation nn --default_pixel_value 0 ${ATLASDIR}/ROI_MNI_V4.nii ./roi_regfmri.nii.gz
