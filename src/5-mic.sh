@@ -16,6 +16,7 @@ $(ls ${TOP}/experiment/data/${FIRSTSUBJ}/masked_fmri | sed -e s/[^0-9]//g > ${TO
 for s in $(cat ./experiment/subject_list.txt); do
 
 	mkdir ${QSUBDIR}/${s}
+	mkdir ${TOP}/experiment/data/${s}/micfiles
 
 	for((roi=1;roi<=${ROICOUNT};roi++)); do
 
