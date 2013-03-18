@@ -5,18 +5,31 @@ echo ${s}
 cd ${TOP}
 
 DATADIR=${TOP}/experiment/data/${s}
-VALUEDIR=${DATADIR}/micfiles
+VALUEDIR=${DATADIR}/micfiles_avg
+
+REGIONCOUNT=$(cat ./experiment/roi_list.txt | wc -l)
+
+FILECOUNT=$(( (${REGIONCOUNT} * (${REGIONCOUNT} - 1)) / 2 + ${REGIONCOUNT}));
+
+echo "regions: ${REGIONCOUNT}"
+echo "expected files: ${FILECOUNT}"
+echo "actual files: $(ls -1 ${VALUEDIR} | wc -l)"
+
+if [ $(ls -1 ${VALUEDIR} | wc -l) -ne ${FILECOUNT} ]; then
+	echo "Not enough MIC values!"
+	echo ${s} >> ${DATADIR}/../failed_mic.txt
+	exit
+fi
 
 WORKINGDIR=${DATADIR}/final_matrices
 mkdir ${WORKINGDIR}
 
-MICFILE=${WORKINGDIR}/mic.txt
-MASFILE=${WORKINGDIR}/mas.txt
-MEVFILE=${WORKINGDIR}/mev.txt
-MCNFILE=${WORKINGDIR}/mcn.txt
-NLNFILE=${WORKINGDIR}/nonlinearity.txt
+MICFILE=${WORKINGDIR}/mic_avg.txt
+MASFILE=${WORKINGDIR}/mas_avg.txt
+MEVFILE=${WORKINGDIR}/mev_avg.txt
+MCNFILE=${WORKINGDIR}/mcn_avg.txt
+NLNFILE=${WORKINGDIR}/nonlinearity_avg.txt
 
-REGIONCOUNT=$(cat ./experiment/roi_list.txt | wc -l)
 
 for((i=1;i<=${REGIONCOUNT};i++)); do
 

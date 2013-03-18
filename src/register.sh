@@ -41,7 +41,7 @@ RigidRegistration --fixedsmoothingfactor 0 --movingsmoothingfactor 0 --histogram
 AffineRegistration --fixedsmoothingfactor 0 --movingsmoothingfactor 0 --histogrambins 30 --spatialsamples 10000 --iterations 2000 --translationscale 100 --initialtransform ./atlastot1w_rigidtransform.txt --outputtransform ./atlastot1w_affinetransform.txt --resampledmovingfilename ./atlas_regfMRI.nii.gz ./t1w_regfmri.nii.gz ./atlasbrain_rs.nii.gz
 
 # apply atlas transformation to label map
-ResampleVolume2 --Reference ./fmri0.nii.gz --transformationFile ./atlastot1w_affinetransform.txt --transform_order input-to-output --interpolation nn --default_pixel_value 0 ${ATLASDIR}/ROI_MNI_V4.nii ./roi_regfmri.nii.gz
+ResampleVolume2 --Reference ./fmri0.nii.gz --transformationFile ./atlastot1w_affinetransform.txt --transform_order input-to-output --interpolation nn --default_pixel_value 0 ${ATLASDIR}/ROI_MNI_V4_NoCblm.nii ./roi_regfmri.nii.gz
 
 # split registered label map into separate labels
 mkdir splitlabels
