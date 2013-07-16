@@ -5,7 +5,7 @@ echo ${s}
 cd ${TOP}
 
 DATADIR=${TOP}/experiment/data/${s}
-VALUEDIR=${DATADIR}/micfiles_avg
+VALUEDIR=${DATADIR}/micfiles_pca
 
 REGIONCOUNT=$(cat ./experiment/roi_list.txt | wc -l)
 
@@ -24,11 +24,11 @@ fi
 WORKINGDIR=${DATADIR}/final_matrices
 mkdir ${WORKINGDIR}
 
-MICFILE=${WORKINGDIR}/mic_avg.txt
-MASFILE=${WORKINGDIR}/mas_avg.txt
-MEVFILE=${WORKINGDIR}/mev_avg.txt
-MCNFILE=${WORKINGDIR}/mcn_avg.txt
-NLNFILE=${WORKINGDIR}/nonlinearity_avg.txt
+MICFILE=${WORKINGDIR}/mic_pca.txt
+MASFILE=${WORKINGDIR}/mas_pca.txt
+MEVFILE=${WORKINGDIR}/mev_pca.txt
+MCNFILE=${WORKINGDIR}/mcn_pca.txt
+NLNFILE=${WORKINGDIR}/nonlinearity_pca.txt
 
 
 for((i=1;i<=${REGIONCOUNT};i++)); do
